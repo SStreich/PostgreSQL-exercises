@@ -1,21 +1,21 @@
 -- 1
 CREATE TABLE account (
   account_id SERIAL PRIMARY KEY,
-  name VARCHAR(50),
-  password VARCHAR(50),
-  email VARCHAR(50)
+  name VARCHAR(50) NOT NULL,
+  password VARCHAR(50) NOT NULL,
+  email VARCHAR(50) NOT NULL
 );
 
 -- 2
 CREATE TABLE artist (
   artist_id SERIAL PRIMARY KEY,
-  name VARCHAR(50)
+  name VARCHAR(50) NOT NULL
 );
 
 -- 3
 CREATE TABLE album (
   album_id SERIAL PRIMARY KEY,
-  name VARCHAR(50),
+  name VARCHAR(50) NOT NULL ,
   year INT
 );
 
@@ -23,22 +23,22 @@ CREATE TABLE album (
 CREATE TABLE song (
   song_id SERIAL PRIMARY KEY,
   name VARCHAR(50) NOT NULL,
-  album INT REFERENCES album(album_id),
-  listens INT
+  album VARCHAR(50),
+  listens INT DEFAULT 0
 );
 
 -- 5
 CREATE TABLE playlist (
   playlist_id SERIAL PRIMARY KEY,
-  name VARCHAR(50),
-  owner_id INTEGER,
-  private boolean
+  name VARCHAR(50) NOT NULL,
+  owner_id INTEGER NOT NULL ,
+  private boolean DEFAULT true
 );
 
 -- 6
 CREATE TABLE genre (
   genre_id SERIAL PRIMARY KEY,
-  name VARCHAR(50)
+  name VARCHAR(50) NOT NULL
 );
 
 -- 7
@@ -75,3 +75,21 @@ CREATE TABLE artist_album (
   album_id INTEGER NOT NULL REFERENCES album,
   PRIMARY KEY (artist_id, album_id)
 );
+
+CREATE OR REPLACE VIEW top_songs AS
+  SELECT * FROM song
+    ORDER BY listens DESC
+    LIMIT 10;
+
+CREATE OR REPLACE FUNCTION add_album() RETURNS trigger AS $update_top_songs$
+  BEGIN
+    IF NEW.album NOT IN (SELECT name FROM public.album) THEN
+      INSERT INTO public.album(name) VALUES (NEW.album);
+      RETURN new;
+  END IF;
+  RETURN new;
+  END;
+  $update_top_songs$ LANGUAGE plpgsql;
+
+CREATE TRIGGER add_album AFTER INSERT OR UPDATE ON song
+  FOR EACH ROW EXECUTE PROCEDURE add_album();
