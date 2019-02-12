@@ -23,7 +23,7 @@ CREATE TABLE album (
 CREATE TABLE song (
   song_id SERIAL PRIMARY KEY,
   name VARCHAR(50) NOT NULL,
-  album VARCHAR(50),
+  album INT,
   listens INT DEFAULT 0
 );
 
@@ -31,14 +31,13 @@ CREATE TABLE song (
 CREATE TABLE playlist (
   playlist_id SERIAL PRIMARY KEY,
   name VARCHAR(50) NOT NULL,
-  owner_id INTEGER NOT NULL ,
-  private boolean DEFAULT true
+  owner_id INTEGER NOT NULL
 );
 
 -- 6
 CREATE TABLE genre (
   genre_id SERIAL PRIMARY KEY,
-  name VARCHAR(50) NOT NULL
+  name VARCHAR(50) UNIQUE NOT NULL
 );
 
 -- 7
@@ -90,6 +89,7 @@ CREATE OR REPLACE FUNCTION add_album() RETURNS trigger AS $update_top_songs$
   RETURN new;
   END;
   $update_top_songs$ LANGUAGE plpgsql;
+
 
 CREATE TRIGGER add_album AFTER INSERT OR UPDATE ON song
   FOR EACH ROW EXECUTE PROCEDURE add_album();
