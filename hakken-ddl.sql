@@ -23,7 +23,7 @@ CREATE TABLE album (
 CREATE TABLE song (
   song_id SERIAL PRIMARY KEY,
   name VARCHAR(50) NOT NULL,
-  album INT,
+  album_id INT,
   listens INT DEFAULT 0
 );
 
