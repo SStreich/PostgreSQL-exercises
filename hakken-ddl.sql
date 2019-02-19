@@ -1,7 +1,7 @@
 -- 1
 CREATE TABLE account (
   account_id SERIAL PRIMARY KEY,
-  name VARCHAR(50) NOT NULL,
+  name VARCHAR(70) NOT NULL,
   password VARCHAR(50) NOT NULL,
   email VARCHAR(50) NOT NULL
 );
@@ -9,20 +9,20 @@ CREATE TABLE account (
 -- 2
 CREATE TABLE artist (
   artist_id SERIAL PRIMARY KEY,
-  name VARCHAR(50) NOT NULL
+  name VARCHAR(999) NOT NULL
 );
 
 -- 3
 CREATE TABLE album (
   album_id SERIAL PRIMARY KEY,
-  name VARCHAR(50) NOT NULL ,
-  year INT
+  name VARCHAR(990) NOT NULL ,
+  year VARCHAR(30)
 );
 
 -- 4
 CREATE TABLE song (
   song_id SERIAL PRIMARY KEY,
-  name VARCHAR(50) NOT NULL,
+  name VARCHAR(990) NOT NULL,
   album_id INT,
   listens INT DEFAULT 0
 );
@@ -30,14 +30,14 @@ CREATE TABLE song (
 -- 5
 CREATE TABLE playlist (
   playlist_id SERIAL PRIMARY KEY,
-  name VARCHAR(50) NOT NULL,
+  name VARCHAR(70) NOT NULL,
   owner_id INTEGER NOT NULL
 );
 
 -- 6
 CREATE TABLE genre (
   genre_id SERIAL PRIMARY KEY,
-  name VARCHAR(50) UNIQUE NOT NULL
+  name VARCHAR(70) UNIQUE NOT NULL
 );
 
 -- 7
@@ -80,16 +80,18 @@ CREATE OR REPLACE VIEW top_songs AS
     ORDER BY listens DESC
     LIMIT 10;
 
-CREATE OR REPLACE FUNCTION add_album() RETURNS trigger AS $update_top_songs$
-  BEGIN
-    IF NEW.album NOT IN (SELECT name FROM public.album) THEN
-      INSERT INTO public.album(name) VALUES (NEW.album);
-      RETURN new;
-  END IF;
-  RETURN new;
-  END;
-  $update_top_songs$ LANGUAGE plpgsql;
+ CREATE OR REPLACE FUNCTION set_year() RETURNS trigger AS $set_0_value_as_null$
+   BEGIN
+    IF NEW.year = '0' THEN
+       NEW.year := '';
+    END IF;
+    RETURN NEW;
+   END;
+   $set_0_value_as_null$ LANGUAGE plpgsql;
 
 
-CREATE TRIGGER add_album AFTER INSERT OR UPDATE ON song
-  FOR EACH ROW EXECUTE PROCEDURE add_album();
+ CREATE TRIGGER set_year BEFORE INSERT OR UPDATE ON album
+   FOR EACH ROW EXECUTE PROCEDURE set_year();
+
+
+
