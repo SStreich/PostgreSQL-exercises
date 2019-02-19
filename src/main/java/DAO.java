@@ -4,26 +4,28 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class DAO {
-    Connection con = ConnectionProvider.getConnection();
+    private Connection con = ConnectionProvider.getConnection();
 
     void addSong(String song, String artist, int album_id) throws SQLException {
-        ResultSet resultSet = getSongResultSet(song, artist);
+       // ResultSet resultSet = getSongResultSet(song, artist);
 
-        if (!checkIfResultExists(resultSet)) {
+       // if (!checkIfResultExists(resultSet)) {
 
-            PreparedStatement prepInsert = con.prepareStatement("INSERT INTO song(name, album_id) VALUES ('?' , '?')");
+            PreparedStatement prepInsert = con.prepareStatement("INSERT INTO song(name, album_id) VALUES (? , ?)" +
+                    "ON CONFLICT DO NOTHING");
             prepInsert.setString(1, song);
-            prepInsert.setString(2, String.valueOf(album_id));
+            prepInsert.setInt(2, album_id);
 
             prepInsert.executeUpdate();
-        }
+        //}
     }
 
     void addToArtist_Song(int artist_id, int song_id) throws SQLException {
 
-        PreparedStatement prepInsert = con.prepareStatement("INSERT INTO artist_song(artist_id, album_id) VALUES ('?' , '?')");
-        prepInsert.setString(1, String.valueOf(artist_id));
-        prepInsert.setString(2, String.valueOf(song_id));
+        PreparedStatement prepInsert = con.prepareStatement("INSERT INTO artist_song(artist_id, song_id) VALUES (? , ?)" +
+                                                            "ON CONFLICT DO NOTHING");
+        prepInsert.setInt(1, artist_id);
+        prepInsert.setInt(2, song_id);
 
         prepInsert.executeUpdate();
     }
@@ -35,7 +37,8 @@ public class DAO {
 
         if (!checkIfResultExists(resultSet)) {
 
-            PreparedStatement prepInsert = con.prepareStatement("INSERT INTO album(name, year) VALUES ('?', '?')");
+            PreparedStatement prepInsert = con.prepareStatement("INSERT INTO album(name, year) VALUES (?, ?)" +
+                    "ON CONFLICT DO NOTHING");
             prepInsert.setString(1, album);
             prepInsert.setString(2, year);
 
@@ -44,9 +47,10 @@ public class DAO {
     }
 
      void addToArtist_Album(int artist_id, int album_id) throws SQLException {
-        PreparedStatement prepInsert = con.prepareStatement("INSERT INTO artist_album(artist_id, album_id) VALUES ('?' , '?')");
-        prepInsert.setString(1, String.valueOf(artist_id));
-        prepInsert.setString(2, String.valueOf(album_id));
+        PreparedStatement prepInsert = con.prepareStatement("INSERT INTO artist_album(artist_id, album_id) VALUES (? , ?) " +
+                                                                "ON CONFLICT DO NOTHING");
+        prepInsert.setInt(1, artist_id);
+        prepInsert.setInt(2, album_id);
 
         prepInsert.executeUpdate();
     }
@@ -56,7 +60,8 @@ public class DAO {
 
         if (!checkIfResultExists(resultSet)) {
 
-            PreparedStatement prepInsert = con.prepareStatement("INSERT INTO genre(name) VALUES ('?')");
+            PreparedStatement prepInsert = con.prepareStatement("INSERT INTO genre(name) VALUES (?)" +
+                    "ON CONFLICT DO NOTHING");
             prepInsert.setString(1, genre);
 
             prepInsert.executeUpdate();
@@ -64,9 +69,10 @@ public class DAO {
     }
 
      void addToSong_Genre(int song_id, int genre_id) throws SQLException {
-        PreparedStatement prepInsert = con.prepareStatement("INSERT INTO song_genre(song_id, genre_id) VALUES ('?' , '?')");
-        prepInsert.setString(1, String.valueOf(song_id));
-        prepInsert.setString(2, String.valueOf(genre_id));
+        PreparedStatement prepInsert = con.prepareStatement("INSERT INTO song_genre(song_id, genre_id) VALUES (? , ?)" +
+                                                                "ON CONFLICT DO NOTHING");
+        prepInsert.setInt(1, song_id);
+        prepInsert.setInt(2, genre_id);
 
         prepInsert.executeUpdate();
     }
@@ -75,7 +81,8 @@ public class DAO {
         ResultSet resultSet = getRecordResultSet("artist", artist);
 
         if (!checkIfResultExists(resultSet)) {
-            PreparedStatement prepInsert = con.prepareStatement("INSERT INTO artist(name) VALUES ('?')");
+            PreparedStatement prepInsert = con.prepareStatement("INSERT INTO artist(name) VALUES (?)" +
+                    "ON CONFLICT DO NOTHING");
             prepInsert.setString(1, artist);
 
             prepInsert.executeUpdate();
@@ -86,7 +93,7 @@ public class DAO {
         PreparedStatement prepSelect = con.prepareStatement("SELECT song.song_id FROM song" +
                 "  INNER JOIN artist_song ON artist_song.song_id = song.song_id" +
                 "  INNER JOIN artist ON artist_song.artist_id = artist.artist_id" +
-                "  WHERE song.name = '?' AND artist.name = '?';");
+                "  WHERE song.name = ? AND artist.name = ?;");
         prepSelect.setString(1, song);
         prepSelect.setString(2, artist);
 
@@ -97,7 +104,7 @@ public class DAO {
         PreparedStatement prepSelect = con.prepareStatement("SELECT album.album_id FROM album" +
                 "  INNER JOIN artist_album ON artist_album.album_id = album.album_id" +
                 "  INNER JOIN artist ON artist_album.artist_id = artist.artist_id" +
-                "  WHERE album.name = '?' AND artist.name = '?';");
+                "  WHERE album.name = ? AND artist.name = ?;");
         prepSelect.setString(1, album);
         prepSelect.setString(2, artist);
 
@@ -105,10 +112,10 @@ public class DAO {
     }
 
      ResultSet getRecordResultSet(String tableName, String name) throws SQLException {
-        PreparedStatement prepSelect = con.prepareStatement("SELECT ?_id FROM ? WHERE name = '?'");
+        String string = String.format("SELECT %s_id FROM %s WHERE name = ?", tableName, tableName);
+        PreparedStatement prepSelect = con.prepareStatement(string);
 
-        prepSelect.setString(1, tableName);
-        prepSelect.setString(2, name);
+        prepSelect.setString(1, name);
 
         return prepSelect.executeQuery();
     }
@@ -117,4 +124,12 @@ public class DAO {
         return resultSet.next();
     }
 
+    public int getRecordId(String tableName, String name, String columnLabel) throws SQLException {
+        ResultSet resultSet = this.getRecordResultSet(tableName, name);
+        if(resultSet.next()) {
+            return resultSet.getInt(columnLabel);
+        } else {
+            return 1;
+        }
+    }
 }
