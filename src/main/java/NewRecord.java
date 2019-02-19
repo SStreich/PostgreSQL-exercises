@@ -2,10 +2,6 @@ import java.sql.*;
 
 public class NewRecord {
     DAO dao = new DAO();
-    //static int artist_id = 1;
-    static int album_id = 1;
-    static int song_id = 1;
-    static int genre_id = 1;
 
     void addNewRecord(String song, String album, String artist, String genre, String year) throws SQLException {
 
