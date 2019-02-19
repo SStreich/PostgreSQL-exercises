@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 class CSVController {
 
-    ArrayList<String[]> records = new ArrayList();
+    private ArrayList<String[]> records = new ArrayList();
 
     public CSVController(String fileName){
         readFile(fileName);
@@ -20,6 +20,10 @@ class CSVController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public ArrayList<String[]> getRecords() {
+        return records;
     }
 
     public void writeFile(String fileName) {
