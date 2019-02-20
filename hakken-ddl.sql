@@ -115,3 +115,59 @@ CREATE INDEX IF NOT EXISTS song_name ON song USING spgist(name);
 
 
 
+CREATE INDEX IF NOT EXISTS album_year on album(year DESC);
+
+
+CREATE OR REPLACE FUNCTION incrementListens(songID INT) RETURNS void AS $incrementListens$
+  BEGIN
+    UPDATE song SET listens = listens + 1
+    WHERE song.song_id = songID;
+  END;
+$incrementListens$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION addToUserPlayedPlaylist(accountID INTEGER, songID INTEGER)
+RETURNS void AS $addToUserPlayedPlaylist$
+  BEGIN
+    INSERT INTO song_playlist (song_id, playlist_id)
+    VALUES (songID,
+            (SELECT playlist_id FROM playlist
+            WHERE owner_id = accountID
+            ORDER BY playlist_id
+            ASC LIMIT 1)
+            );
+  END;
+$addToUserPlayedPlaylist$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE VIEW v_rockSongs AS
+SELECT song.name as Title, album.name as Album, song.listens as Listens
+  FROM song
+    inner join song_genre on song.song_id = song_genre.song_id
+    inner join genre on song_genre.genre_id = genre.genre_id
+    inner join album on song.album_id = album.album_id
+  WHERE genre.name = 'rock';
+
+
+CREATE OR REPLACE FUNCTION handlePlaylistSize() RETURNS TRIGGER
+AS $handlePlaylistSize$
+  BEGIN
+    IF (SELECT count(playlist_id) FROM song_playlist
+    WHERE playlist_id = NEW.playlist_id) > 100 THEN
+        DELETE FROM song_playlist WHERE song_id IN
+                                      (SELECT song_id FROM song_playlist
+                                      WHERE playlist_id = NEW.playlist_id
+                                      ORDER BY song_playlist.playlist_id ASC
+                                      LIMIT 1) AND playlist_id = NEW.playlist_id;
+    END IF;
+  RETURN new;
+END;
+$handlePlaylistSize$ LANGUAGE plpgsql;
+
+
+DROP TRIGGER IF EXISTS handlePlaylistSize ON song_playlist;
+
+
+CREATE TRIGGER handlePlaylistSize AFTER INSERT ON song_playlist
+  FOR EACH ROW EXECUTE PROCEDURE handlePlaylistSize();
+
