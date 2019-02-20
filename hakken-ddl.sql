@@ -80,20 +80,36 @@ CREATE OR REPLACE VIEW top_songs AS
     ORDER BY listens DESC
     LIMIT 10;
 
- CREATE OR REPLACE FUNCTION set_year() RETURNS trigger AS $set_0_value_as_null$
+DROP TRIGGER IF EXISTS set_year
+  ON public.album;
+
+DROP TRIGGER IF EXISTS assign_playlists
+  ON public.playlist;
+
+DROP FUNCTION IF EXISTS assign_playlists();
+
+CREATE OR REPLACE FUNCTION set_year() RETURNS trigger AS $set_0_value_empty$
    BEGIN
     IF NEW.year = '0' THEN
        NEW.year := '';
     END IF;
     RETURN NEW;
    END;
-   $set_0_value_as_null$ LANGUAGE plpgsql;
+$set_0_value_empty$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS set_year
-  ON public.album;
+CREATE OR REPLACE FUNCTION assign_playlists() RETURNS trigger AS $assign_playlists$
+BEGIN
+     INSERT INTO account_playlist(account_id, playlist_id)
+     VALUES (NEW.owner_id, NEW.playlist_id);
+    RETURN NEW;
+END;
+  $assign_playlists$ LANGUAGE plpgsql;
 
 CREATE TRIGGER set_year BEFORE INSERT OR UPDATE ON album
    FOR EACH ROW EXECUTE PROCEDURE set_year();
+
+CREATE TRIGGER assign_playlists AFTER INSERT OR UPDATE ON playlist
+  FOR EACH ROW EXECUTE PROCEDURE assign_playlists();
 
 CREATE INDEX IF NOT EXISTS song_name ON song USING spgist(name);
 
