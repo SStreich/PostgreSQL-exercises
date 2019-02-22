@@ -41,34 +41,27 @@ CREATE TABLE IF NOT EXISTS genre (
 );
 
 -- 7
-CREATE TABLE IF NOT EXISTS account_playlist (
-  account_id INTEGER NOT NULL REFERENCES account,
-  playlist_id INTEGER NOT NULL REFERENCES playlist,
-  PRIMARY KEY (account_id, playlist_id)
-);
-
--- 8
 CREATE TABLE IF NOT EXISTS song_genre (
   song_id INTEGER NOT NULL REFERENCES song,
   genre_id INTEGER NOT NULL REFERENCES genre,
   PRIMARY KEY (song_id, genre_id)
 );
 
--- 9
+-- 8
 CREATE TABLE IF NOT EXISTS song_playlist (
   song_id INTEGER NOT NULL REFERENCES song,
   playlist_id INTEGER NOT NULL REFERENCES playlist,
   PRIMARY KEY (song_id, playlist_id)
 );
 
--- 10
+-- 9
 CREATE TABLE IF NOT EXISTS artist_song (
   artist_id INTEGER NOT NULL REFERENCES artist,
   song_id INTEGER NOT NULL REFERENCES song,
   PRIMARY KEY (artist_id, song_id)
 );
 
--- 11
+-- 10
 CREATE TABLE IF NOT EXISTS artist_album (
   artist_id INTEGER NOT NULL REFERENCES artist,
   album_id INTEGER NOT NULL REFERENCES album,
