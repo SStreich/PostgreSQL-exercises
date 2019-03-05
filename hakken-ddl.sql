@@ -164,3 +164,102 @@ DROP TRIGGER IF EXISTS handlePlaylistSize ON song_playlist;
 CREATE TRIGGER handlePlaylistSize AFTER INSERT ON song_playlist
   FOR EACH ROW EXECUTE PROCEDURE handlePlaylistSize();
 
+CREATE OR REPLACE FUNCTION getPlaylistId(accountId int) RETURNS integer
+AS
+$getPlaylistId$
+BEGIN
+  RETURN (SELECT playlist_id FROM playlist WHERE owner_id = accountId ORDER BY playlist_id ASC LIMIT 1);
+END;
+$getPlaylistId$
+  LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION getGenreName(songId int) RETURNS text
+AS
+$getGenreName$
+BEGIN
+  RETURN (SELECT genre.name
+          FROM genre
+                 INNER JOIN song_genre
+                            ON genre.genre_id = song_genre.genre_id
+          WHERE song_id = songId);
+END;
+$getGenreName$
+  LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION getGenreID(songId int) RETURNS int
+AS
+$getGenreName$
+BEGIN
+  RETURN (SELECT genre.genre_id
+          FROM genre
+                 INNER JOIN song_genre
+                            ON genre.genre_id = song_genre.genre_id
+          WHERE song_id = songId);
+END;
+$getGenreName$
+  LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION getAllSongIDs(playlistId int) RETURNS setof int
+AS
+$getAllsongs$
+BEGIN
+  RETURN QUERY SELECT song_id FROM song_playlist WHERE playlist_id = playlistId;
+  IF NOT found THEN
+    RAISE NOTICE 'No songs found in playlist';
+  END IF;
+
+END;
+$getAllsongs$
+  LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION getAllGenresNamesInPlaylist(playlistId int) RETURNS setof text
+AS
+$allGenresInPlaylist$
+DECLARE
+  song integer;
+BEGIN
+  FOR song IN SELECT song_id FROM song_playlist WHERE playlist_id = playlistId
+    LOOP
+      RETURN NEXT (SELECT genre.name
+                   FROM genre
+                          INNER JOIN song_genre ON genre.genre_id = song_genre.genre_id
+                   WHERE song_id = song);
+    END LOOP;
+END;
+$allGenresInPlaylist$
+  LANGUAGE plpgsql;
+
+
+CREATE VIEW top_20_artists AS
+SELECT artist.name AS artist, album.name AS album, sum(song.listens) total_listens
+FROM artist
+       INNER JOIN artist_album ON artist.artist_id = artist_album.artist_id
+       INNER JOIN album ON album.album_id = artist_album.album_id
+       INNER JOIN song ON song.album_id = album.album_id
+GROUP BY song.listens, artist.name, album.name
+ORDER BY song.listens DESC
+LIMIT 20;
+
+
+CREATE FUNCTION incrementlistens_privatePlaylist() RETURNS trigger AS
+$listens$
+DECLARE
+  newSongId  int;
+  playListID int;
+  ownerID    int;
+BEGIN
+  newSongId := new.song_id;
+  playListID := new.playlist_id;
+  ownerID := (SELECT owner_id FROM playlist WHERE owner_id == playListID);
+
+  UPDATE song
+  SET listens = listens + 1
+  WHERE song.song_id = newSongId;
+
+END;
+$listens$
+  LANGUAGE plpgsql;
